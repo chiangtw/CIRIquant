@@ -53,6 +53,9 @@ def main():
     parser.add_argument('--tool', dest='tool', metavar='TOOL', default=None,
                         help='circRNA prediction tool, required if --circ is provided', )
 
+    parser.add_argument('--denovo_index', dest='denovo_index', metavar='INDEX', default=None,
+                        help='pre-build index for denovo alignment ([output]/circ/[prefix])', )
+
     # when provide RNase R result, do RNase R correction
     parser.add_argument('--RNaseR', dest='rnaser', metavar='FILE', default=None,
                         help='CIRIquant result of RNase R sample', )
@@ -180,7 +183,7 @@ def main():
         circ_parser.convert(bed_file)
 
     # Step4: estimate circRNA expression level
-    out_file = circ.proc(log_file, thread, bed_file, hisat_bam, rnaser_file, reads, outdir, prefix, anchor, lib_type)
+    out_file = circ.proc(log_file, thread, bed_file, hisat_bam, rnaser_file, reads, outdir, prefix, anchor, lib_type, args.denovo_index)
 
     # Remove temporary files
     pipeline.clean_tmp(outdir, prefix)

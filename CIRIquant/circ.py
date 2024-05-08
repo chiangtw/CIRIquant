@@ -228,7 +228,7 @@ def build_index(log_file, thread, pseudo_fasta, outdir, prefix):
     return denovo_index
 
 
-def denovo_alignment(log_file, thread, reads, outdir, prefix):
+def denovo_alignment(log_file, thread, reads, outdir, prefix, denovo_index):
     """
     Call hisat2 to read re-alignment
 
@@ -242,11 +242,10 @@ def denovo_alignment(log_file, thread, reads, outdir, prefix):
     denovo_bam = '{}/circ/{}_denovo.bam'.format(outdir, prefix)
     sorted_bam = '{}/circ/{}_denovo.sorted.bam'.format(outdir, prefix)
 
-    align_cmd = '{} -p {} --dta -q -x {}/circ/{}_index -1 {} -2 {} | {} view -bS > {}'.format(
+    align_cmd = '{} -p {} --dta -q -x {} -1 {} -2 {} | {} view -bS > {}'.format(
         utils.HISAT2,
         thread,
-        outdir,
-        prefix,
+        denovo_index,
         reads[0],
         reads[1],
         utils.SAMTOOLS,
@@ -619,7 +618,7 @@ def query_prefix(query_name):
     return prefix
 
 
-def proc(log_file, thread, circ_file, hisat_bam, rnaser_file, reads, outdir, prefix, anchor, lib_type):
+def proc(log_file, thread, circ_file, hisat_bam, rnaser_file, reads, outdir, prefix, anchor, lib_type, denovo_index=None):
     """
     Build pseudo circular reference index and perform reads re-alignment
     Extract BSJ and FSJ reads from alignment results
@@ -634,21 +633,24 @@ def proc(log_file, thread, circ_file, hisat_bam, rnaser_file, reads, outdir, pre
     circ_dir = '{}/circ'.format(outdir)
     check_dir(circ_dir)
 
-    circ_fasta = '{}/circ/{}_index.fa'.format(outdir, prefix)
     circ_info = load_bed(circ_file)
     if rnaser_file:
         LOGGER.info('Loading RNase R results')
         rnaser_exp, rnaser_stat = update_info(circ_info, rnaser_file)
 
-    # extract fasta file for reads alignment
-    generate_index(log_file, circ_info, circ_fasta)
+    if not denovo_index:
+        
+        # extract fasta file for reads alignment
+        circ_fasta = '{}/circ/{}_index.fa'.format(outdir, prefix)
+        generate_index(log_file, circ_info, circ_fasta)
 
-    # hisat2-build index
-    denovo_index = build_index(log_file, thread, circ_fasta, outdir, prefix)
+        # hisat2-build index
+        denovo_index = build_index(log_file, thread, circ_fasta, outdir, prefix)
+
     LOGGER.debug('De-novo index: {}'.format(denovo_index))
 
     # hisat2 de novo alignment for candidate reads
-    denovo_bam = denovo_alignment(log_file, thread, reads, outdir, prefix)
+    denovo_bam = denovo_alignment(log_file, thread, reads, outdir, prefix, denovo_index)
     LOGGER.debug('De-novo bam: {}'.format(denovo_bam))
 
     # Find BSJ and FSJ informations
