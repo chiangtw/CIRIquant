@@ -105,6 +105,11 @@ def main():
     # pre aligned hisat2 bam
     hisat_bam = check_file(args.bam) if args.bam else None
 
+    denovo_index = args.denovo_index
+    if denovo_index:
+        denovo_index = os.path.abspath(denovo_index + '.fa')
+        denovo_index = denovo_index[:-3]
+
     # Output prefix
     if args.prefix is None:
         try:
@@ -183,7 +188,7 @@ def main():
         circ_parser.convert(bed_file)
 
     # Step4: estimate circRNA expression level
-    out_file = circ.proc(log_file, thread, bed_file, hisat_bam, rnaser_file, reads, outdir, prefix, anchor, lib_type, args.denovo_index)
+    out_file = circ.proc(log_file, thread, bed_file, hisat_bam, rnaser_file, reads, outdir, prefix, anchor, lib_type, denovo_index)
 
     # Remove temporary files
     pipeline.clean_tmp(outdir, prefix)
